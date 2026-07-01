@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+
+  # ── MongoDB ──────────────────────────────────────────────
+  notification-db:
+    image: mongo:7
+    container_name: calio-notification-db
+    ports:
+      - "27018:27017"
+    volumes:
+      - notification_db_data:/data/db
+    networks:
+      - calio-network
+
+  # ── RabbitMQ ─────────────────────────────────────────────
+  # Si ya tienes un contenedor de RabbitMQ compartido en el proyecto Calio,
+  # elimina este servicio y solo apunta RABBITMQ_URL al que ya existe.
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: calio-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: calio
+      RABBITMQ_DEFAULT_PASS: calio123
+    ports:
+      - "5672:5672"
+      - "15672:15672" # panel de administración
+    networks:
+      - calio-network
+
+  # ── Notification Service S-07 ────────────────────────────
+  notification-service:
+    build: .
+    container_name: calio-notification-service
+    environment:
+      PORT: 8087
+      MONGO_URI: mongodb://notification-db:27017/calio_notifications
+      RABBITMQ_URL: amqp://calio:calio123@rabbitmq:5672
+      RABBITMQ_EXCHANGE: calio.events
+      RABBITMQ_QUEUE: notification.queue
+      FIREBASE_ENABLED: "false"
+      JWT_SECRET: cali0-super-secret-key-for-jwt-signing-256bits!!
+    ports:
+      - "8087:8087"
+    depends_on:
+      - notification-db
+      - rabbitmq
+    networks:
+      - calio-network
+    restart: unless-stopped
+
+volumes:
+  notification_db_data:
+
+networks:
+  calio-network:
+    name: calio-network
+    external: true
