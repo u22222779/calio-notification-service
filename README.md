@@ -97,7 +97,7 @@ reconoce o Docker Desktop no arranca, sigue esto antes de continuar:
 ```bash
 cd notification-service
 npm install
-cp .env.example .env
+cp .env.ejemplo .env
 ```
 
 Revisa tu `.env` y confirma que `RABBITMQ_URL` coincide con las credenciales
